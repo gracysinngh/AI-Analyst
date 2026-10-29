@@ -1,4 +1,4 @@
-
+const jwt=require('jsonwebtoken')
 const Auth=async(req,resp,next)=>{
     if(!req.headers.authorization || !req.headers.authorization.startsWith('Bearer ')){
         throw new Error("incorrect format")

@@ -2,6 +2,7 @@ const { User } = require("../models/Auth.models")
 const bcrypt=require('bcrypt')
 const jwt=require('jsonwebtoken')
 const crypto=require('crypto')
+
 const Signup=async(email,body)=>{
     const existingUser=await User.findOne({email})
     if(existingUser){
@@ -19,7 +20,7 @@ const Login=async(email,password)=>{
     if(!isMatch){
         throw new Error("password didnt match try again")
     }
-    const AccToken=jwt.sign({id:user._id},process.env.AccSecKey,{expiresIn:"2d"})
+    const AccToken=jwt.sign({id:user._id,role:user.role,organizationId:user.organizationId},process.env.AccSecKey,{expiresIn:"2d"})
     return AccToken
 }
 const forgot=async(email)=>{
