@@ -17,5 +17,8 @@
   "bugs": {
     "url": "https://github.com/gracysinngh/AI-Analyst/issues"
   },
-  "homepage": "https://github.com/gracysinngh/AI-Analyst#readme"
+  "homepage": "https://github.com/gracysinngh/AI-Analyst#readme",
+  "dependencies": {
+    "dotenv": "^18.0.9"
+  }
 }
