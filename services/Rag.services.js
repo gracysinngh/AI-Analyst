@@ -1,12 +1,28 @@
 const ai = require("../config/ai")
-const PDF = require("../models/pdf.models")
+const PDF = require("../models/pdf.models");
+const { Reranking } = require("../utility/Reranking");
 const { GenerateEmbedding } = require("./pdf.services")
 const mongoose = require("mongoose");
 const Retrieval=async(query,organizationId)=>{
-    const queryEmbedding=await GenerateEmbedding(query)
-     const orgDocs = await PDF.find({
-        organizationId: new mongoose.Types.ObjectId(organizationId)
-    }).select("text organizationId");
+    const enhancedQueryResponse=await ai.models.generateContent({
+        model:"gemini-3.6-flash",
+        contents: `
+Rewrite the user's question into a clear and detailed search query
+for retrieving relevant information from a document.
+
+Do not answer the question.
+Only return the improved search query.
+
+User question:
+${query}
+`
+    })
+    const enhancedQuery = enhancedQueryResponse.text.trim();
+
+console.log("ORIGINAL QUERY:", query);
+console.log("ENHANCED QUERY:", enhancedQuery);
+    const queryEmbedding=await GenerateEmbedding(enhancedQuery)
+     
     const VectorSearch=await PDF.aggregate([
         {
             $vectorSearch:{
@@ -30,7 +46,11 @@ const Retrieval=async(query,organizationId)=>{
             }
         }
     ])
-    const context=VectorSearch.map((res,index)=>`$${index+1} .${res.text}`).join("\n \n")
+    const scoreThreshold=0.70
+    const filteredResult=VectorSearch.filter((res)=>res.score>=scoreThreshold)
+    const reRankedResult=await Reranking(query,filteredResult)
+
+    const context=reRankedResult.filter((res)=>res.score==1).map((res,index)=>`$${index+1} .${res.text}`).join("\n \n")
     console.log("VECTOR SEARCH RESULT:", VectorSearch);
 console.log("CONTEXT:", context);
     const ans=await ai.models.generateContent({
